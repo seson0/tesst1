@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+enum UserRole { owner, renter }
+
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
@@ -12,8 +14,12 @@ class _RegisterPageState extends State<RegisterPage> {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
+  UserRole? _selectedRole = UserRole.renter;
   bool _loading = false;
   String? _error;
+
+  String _roleLabel(UserRole role) =>
+      role == UserRole.owner ? 'Làm chủ sân' : 'Người thuê sân';
 
   Future<void> _register() async {
     final email = _emailCtrl.text.trim();
@@ -29,6 +35,14 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
+    if (_selectedRole == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Vui lòng chọn vai trò')));
+      return;
+    }
+
     setState(() {
       _loading = true;
       _error = null;
@@ -39,15 +53,22 @@ class _RegisterPageState extends State<RegisterPage> {
         email: email,
         password: pass,
       );
-      // Show success message and go to login so user can sign in.
+
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Đăng ký thành công!')));
-      // Give the user a short moment to see the snackbar before navigating.
       await Future.delayed(const Duration(milliseconds: 800));
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/login');
+
+      Navigator.pushReplacementNamed(
+        context,
+        '/login',
+        arguments: {
+          'fromRegister': true,
+          'role': _selectedRole == UserRole.owner ? 'owner' : 'renter',
+        },
+      );
     } on FirebaseAuthException catch (e) {
       setState(() => _error = e.message);
     } catch (e) {
@@ -74,6 +95,30 @@ class _RegisterPageState extends State<RegisterPage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
+              // Role selection
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Bạn là:',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  RadioListTile<UserRole>(
+                    title: Text(_roleLabel(UserRole.owner)),
+                    value: UserRole.owner,
+                    groupValue: _selectedRole,
+                    onChanged: (v) => setState(() => _selectedRole = v),
+                  ),
+                  RadioListTile<UserRole>(
+                    title: Text(_roleLabel(UserRole.renter)),
+                    value: UserRole.renter,
+                    groupValue: _selectedRole,
+                    onChanged: (v) => setState(() => _selectedRole = v),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+
               TextField(
                 controller: _emailCtrl,
                 keyboardType: TextInputType.emailAddress,
@@ -93,6 +138,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   labelText: 'Xác nhận mật khẩu',
                 ),
               ),
+
               const SizedBox(height: 16),
               if (_error != null) ...[
                 Text(_error!, style: const TextStyle(color: Colors.red)),

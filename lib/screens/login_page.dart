@@ -15,6 +15,17 @@ class _LoginPageState extends State<LoginPage> {
   String? _error;
 
   Future<void> _signIn() async {
+    final email = _emailCtrl.text.trim();
+    final pass = _passCtrl.text;
+
+    if (email.isEmpty || pass.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng nhập email và mật khẩu')),
+      );
+      return;
+    }
+
     setState(() {
       _loading = true;
       _error = null;
@@ -22,25 +33,86 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailCtrl.text.trim(),
-        password: _passCtrl.text,
+        email: email,
+        password: pass,
       );
-      // Show success snackbar and navigate to home (AuthGate will also react to auth state).
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Đăng nhập thành công!')));
-      // Wait briefly so the snackbar is visible, then go to home.
       await Future.delayed(const Duration(milliseconds: 700));
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/home');
     } on FirebaseAuthException catch (e) {
-      setState(() => _error = e.message);
+      if (!mounted) return;
+      if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Thông tin không đúng')));
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message ?? 'Lỗi đăng nhập')));
+      }
+      setState(() => _error = null);
     } catch (e) {
-      setState(() => _error = e.toString());
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
+        setState(() => _error = null);
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  // ------------------------------
+  // 👉 Hàm hiển thị dialog quên mật khẩu
+  void _showForgotPasswordDialog() {
+    final TextEditingController emailController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Quên mật khẩu'),
+        content: TextField(
+          controller: emailController,
+          decoration: const InputDecoration(
+            labelText: 'Nhập email của bạn',
+            hintText: 'example@gmail.com',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final email = emailController.text.trim();
+              Navigator.pop(context);
+              if (email.isNotEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Đã gửi mã đặt lại mật khẩu đến $email',
+                    ),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Vui lòng nhập email hợp lệ'),
+                  ),
+                );
+              }
+            },
+            child: const Text('Gửi mã'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -69,6 +141,15 @@ class _LoginPageState extends State<LoginPage> {
               controller: _passCtrl,
               obscureText: true,
               decoration: const InputDecoration(labelText: 'Mật khẩu'),
+            ),
+            const SizedBox(height: 8),
+            // 👉 Nút Quên mật khẩu
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: _showForgotPasswordDialog,
+                child: const Text('Quên mật khẩu?'),
+              ),
             ),
             const SizedBox(height: 16),
             if (_error != null) ...[

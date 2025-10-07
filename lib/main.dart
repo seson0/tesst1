@@ -9,22 +9,23 @@ import 'screens/home_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(const MainApp());
+  runApp(const MyApp());
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Quản lý sân thể thao',
+      title: 'Sân Bóng App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
+      home: const AppShell(), // mở mặc định vào trang chủ với bottom bar
       routes: {
-        '/': (context) => const AuthGate(),
+        '/home': (context) => const AppShell(),
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
-        '/home': (context) => const HomePage(),
       },
     );
   }
@@ -49,7 +50,8 @@ class AuthGate extends StatelessWidget {
           return const LoginPage();
         }
 
-        return const HomePage();
+        // Thay HomePage bằng AppShell (đã định nghĩa trong home_page.dart)
+        return const AppShell();
       },
     );
   }
