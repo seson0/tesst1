@@ -111,23 +111,79 @@ class AccountPage extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
     return Scaffold(
       appBar: AppBar(title: const Text('Tài khoản')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Email: ${user?.email ?? '-'}'),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () async {
-                await FirebaseAuth.instance.signOut();
+      body: ListView(
+        children: [
+          const SizedBox(height: 8),
+          ListTile(
+            leading: const Icon(Icons.settings_outlined),
+            title: const Text('Cấu hình ứng dụng'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () async {
+              // Nếu bạn có route '/settings' thì sẽ chuyển, nếu chưa có sẽ hiện Snackbar
+              try {
+                await Navigator.pushNamed(context, '/settings');
+              } catch (_) {
                 if (!context.mounted) return;
-                Navigator.pushReplacementNamed(context, '/login');
-              },
-              child: const Text('Đăng xuất'),
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Chức năng chưa được triển khai'),
+                  ),
+                );
+              }
+            },
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.help_outline),
+            title: const Text('Hướng dẫn sử dụng'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () async {
+              // chuyển tới trang hướng dẫn nếu có route '/guide'
+              try {
+                await Navigator.pushNamed(context, '/guide');
+              } catch (_) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Chức năng chưa được triển khai'),
+                  ),
+                );
+              }
+            },
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.login),
+            title: Text(user == null ? 'Đăng nhập' : 'Thông tin tài khoản'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              if (!context.mounted) return;
+              if (user == null) {
+                Navigator.pushNamed(context, '/login');
+              } else {
+                // nếu đã đăng nhập, có thể mở trang chi tiết tài khoản
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Đã đăng nhập: ${user.email}')),
+                );
+              }
+            },
+          ),
+          const Divider(height: 1),
+
+          if (user != null) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: ElevatedButton(
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                  if (!context.mounted) return;
+                  Navigator.pushReplacementNamed(context, '/login');
+                },
+                child: const Text('Đăng xuất'),
+              ),
             ),
           ],
-        ),
+        ],
       ),
     );
   }
