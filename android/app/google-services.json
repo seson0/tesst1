@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "892372788963",
+    "project_id": "datsanthethao-19113",
+    "storage_bucket": "datsanthethao-19113.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:892372788963:android:118becb5914500b84987d6",
+        "android_client_info": {
+          "package_name": "com.example.quanlysanthethao"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVbTHWYvBh_VLp9n34sS0cfkPBUnlMdNk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:892372788963:android:8dccc13fc83b94344987d6",
+        "android_client_info": {
+          "package_name": "com.example.tesst1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVbTHWYvBh_VLp9n34sS0cfkPBUnlMdNk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
