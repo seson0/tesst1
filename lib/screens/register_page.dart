@@ -39,7 +39,15 @@ class _RegisterPageState extends State<RegisterPage> {
         email: email,
         password: pass,
       );
-      // After creation, auth state will change and AuthGate sends to Home
+      // Show success message and go to login so user can sign in.
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Đăng ký thành công!')));
+      // Give the user a short moment to see the snackbar before navigating.
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/login');
     } on FirebaseAuthException catch (e) {
       setState(() => _error = e.message);
     } catch (e) {

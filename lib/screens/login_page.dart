@@ -25,7 +25,15 @@ class _LoginPageState extends State<LoginPage> {
         email: _emailCtrl.text.trim(),
         password: _passCtrl.text,
       );
-      // On success StreamBuilder in AuthGate will navigate to Home
+      // Show success snackbar and navigate to home (AuthGate will also react to auth state).
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Đăng nhập thành công!')));
+      // Wait briefly so the snackbar is visible, then go to home.
+      await Future.delayed(const Duration(milliseconds: 700));
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/home');
     } on FirebaseAuthException catch (e) {
       setState(() => _error = e.message);
     } catch (e) {
