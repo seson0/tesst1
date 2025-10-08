@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -10,33 +12,102 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   int _currentIndex = 0;
+  String? _role; // 'owner' or 'renter' (null = treat as renter)
 
-  static final List<Widget> _pages = <Widget>[
-    const HomeContent(),
-    const SearchPage(),
-    const BookingsPage(),
-    const AccountPage(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadRole();
+  }
 
-  void _onTap(int index) => setState(() => _currentIndex = index);
+  Future<void> _loadRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() => _role = prefs.getString('user_role') ?? 'renter');
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isOwner = _role == 'owner';
+
+    // define pages per role
+    final pages = isOwner
+        ? <Widget>[
+            const OwnerManageCourtsPage(),
+            const OwnerBookingsPage(),
+            const OwnerStatsPage(),
+            const AccountPage(),
+          ]
+        : <Widget>[
+            const HomeContent(),
+            const SearchPage(),
+            const BookingsPage(),
+            const AccountPage(),
+          ];
+
+    // bottom items per role
+    final items = isOwner
+        ? <BottomNavigationBarItem>[
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.store_mall_directory),
+              label: 'Quản lý sân',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.book_online),
+              label: 'Quản lý đặt sân',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.bar_chart),
+              label: 'Thống kê',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.person),
+              label: 'Tài khoản',
+            ),
+          ]
+        : <BottomNavigationBarItem>[
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: 'Trang chủ',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.search),
+              label: 'Tìm kiếm',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.history),
+              label: 'Lịch sử',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.person),
+              label: 'Tài khoản',
+            ),
+          ];
+
+    final safeIndex = _currentIndex < pages.length ? _currentIndex : 0;
+
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _pages),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _onTap,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Tìm kiếm'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Lịch thuê',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Tài khoản'),
-        ],
+      body: IndexedStack(index: safeIndex, children: pages),
+      bottomNavigationBar: ConvexAppBar(
+        style: TabStyle.react,
+        initialActiveIndex: safeIndex,
+        onTap: (i) => setState(() => _currentIndex = i),
+        items: isOwner
+            ? [
+                const TabItem(
+                  icon: Icons.store_mall_directory,
+                  title: 'Quản lý sân',
+                ),
+                const TabItem(icon: Icons.book_online, title: 'Đặt sân'),
+                const TabItem(icon: Icons.bar_chart, title: 'Thống kê'),
+                const TabItem(icon: Icons.person, title: 'Tài khoản'),
+              ]
+            : [
+                const TabItem(icon: Icons.home, title: 'Trang chủ'),
+                const TabItem(icon: Icons.search, title: 'Tìm kiếm'),
+                const TabItem(icon: Icons.history, title: 'Lịch sử'),
+                const TabItem(icon: Icons.person, title: 'Tài khoản'),
+              ],
       ),
     );
   }
@@ -119,7 +190,6 @@ class AccountPage extends StatelessWidget {
             title: const Text('Cấu hình ứng dụng'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () async {
-              // Nếu bạn có route '/settings' thì sẽ chuyển, nếu chưa có sẽ hiện Snackbar
               try {
                 await Navigator.pushNamed(context, '/settings');
               } catch (_) {
@@ -138,7 +208,6 @@ class AccountPage extends StatelessWidget {
             title: const Text('Hướng dẫn sử dụng'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () async {
-              // chuyển tới trang hướng dẫn nếu có route '/guide'
               try {
                 await Navigator.pushNamed(context, '/guide');
               } catch (_) {
@@ -161,7 +230,6 @@ class AccountPage extends StatelessWidget {
               if (user == null) {
                 Navigator.pushNamed(context, '/login');
               } else {
-                // nếu đã đăng nhập, có thể mở trang chi tiết tài khoản
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Đã đăng nhập: ${user.email}')),
                 );
@@ -169,7 +237,6 @@ class AccountPage extends StatelessWidget {
             },
           ),
           const Divider(height: 1),
-
           if (user != null) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -185,6 +252,44 @@ class AccountPage extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// -------------------- Owner pages (stubs) --------------------
+
+class OwnerManageCourtsPage extends StatelessWidget {
+  const OwnerManageCourtsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Quản lý sân')),
+      body: const Center(child: Text('Danh sách và quản lý sân (owner)')),
+    );
+  }
+}
+
+class OwnerBookingsPage extends StatelessWidget {
+  const OwnerBookingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Quản lý đặt sân')),
+      body: const Center(child: Text('Quản lý các đặt sân của chủ sân')),
+    );
+  }
+}
+
+class OwnerStatsPage extends StatelessWidget {
+  const OwnerStatsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Thống kê')),
+      body: const Center(child: Text('Thống kê doanh thu / lượt đặt (owner)')),
     );
   }
 }

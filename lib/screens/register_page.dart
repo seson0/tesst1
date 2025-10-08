@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum UserRole { owner, renter }
 
@@ -54,6 +55,13 @@ class _RegisterPageState extends State<RegisterPage> {
         password: pass,
       );
 
+      // sau khi đăng ký thành công:
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        'user_role',
+        _selectedRole == UserRole.owner ? 'owner' : 'renter',
+      );
+      // tiếp tục chuyến hướng về login
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
