@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -43,7 +42,8 @@ class _LoginPageState extends State<LoginPage> {
       ).showSnackBar(const SnackBar(content: Text('Đăng nhập thành công!')));
       await Future.delayed(const Duration(milliseconds: 700));
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/home');
+      // Clear navigation stack so user cannot go back to login/register
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       if (e.code == 'user-not-found' || e.code == 'wrong-password') {
@@ -96,16 +96,12 @@ class _LoginPageState extends State<LoginPage> {
               if (email.isNotEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(
-                      'Đã gửi mã đặt lại mật khẩu đến $email',
-                    ),
+                    content: Text('Đã gửi mã đặt lại mật khẩu đến $email'),
                   ),
                 );
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Vui lòng nhập email hợp lệ'),
-                  ),
+                  const SnackBar(content: Text('Vui lòng nhập email hợp lệ')),
                 );
               }
             },

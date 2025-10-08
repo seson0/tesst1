@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:convex_bottom_bar/convex_bottom_bar.dart';
+import 'account_details_page.dart'; // thêm import tương đối nếu cần
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -26,6 +27,9 @@ class _AppShellState extends State<AppShell> {
     setState(() => _role = prefs.getString('user_role') ?? 'renter');
   }
 
+  // callback để truyền xuống AccountPage: khi quay lại từ login/register hoặc logout sẽ gọi để refresh UI
+  void _onRoleChanged() => _loadRole();
+
   @override
   Widget build(BuildContext context) {
     final isOwner = _role == 'owner';
@@ -36,52 +40,31 @@ class _AppShellState extends State<AppShell> {
             const OwnerManageCourtsPage(),
             const OwnerBookingsPage(),
             const OwnerStatsPage(),
-            const AccountPage(),
+            AccountPage(onRoleChanged: _onRoleChanged),
           ]
         : <Widget>[
             const HomeContent(),
             const SearchPage(),
             const BookingsPage(),
-            const AccountPage(),
+            AccountPage(onRoleChanged: _onRoleChanged),
           ];
 
     // bottom items per role
     final items = isOwner
-        ? <BottomNavigationBarItem>[
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.store_mall_directory),
-              label: 'Quản lý sân',
+        ? <TabItem>[
+            const TabItem(
+              icon: Icons.store_mall_directory,
+              title: 'Quản lý sân',
             ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.book_online),
-              label: 'Quản lý đặt sân',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.bar_chart),
-              label: 'Thống kê',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'Tài khoản',
-            ),
+            const TabItem(icon: Icons.book_online, title: 'Quản lý đặt sân'),
+            const TabItem(icon: Icons.bar_chart, title: 'Thống kê'),
+            const TabItem(icon: Icons.person, title: 'Tài khoản'),
           ]
-        : <BottomNavigationBarItem>[
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Trang chủ',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.search),
-              label: 'Tìm kiếm',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.history),
-              label: 'Lịch sử',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'Tài khoản',
-            ),
+        : <TabItem>[
+            const TabItem(icon: Icons.home, title: 'Trang chủ'),
+            const TabItem(icon: Icons.search, title: 'Tìm kiếm'),
+            const TabItem(icon: Icons.history, title: 'Lịch sử'),
+            const TabItem(icon: Icons.person, title: 'Tài khoản'),
           ];
 
     final safeIndex = _currentIndex < pages.length ? _currentIndex : 0;
@@ -92,22 +75,7 @@ class _AppShellState extends State<AppShell> {
         style: TabStyle.react,
         initialActiveIndex: safeIndex,
         onTap: (i) => setState(() => _currentIndex = i),
-        items: isOwner
-            ? [
-                const TabItem(
-                  icon: Icons.store_mall_directory,
-                  title: 'Quản lý sân',
-                ),
-                const TabItem(icon: Icons.book_online, title: 'Đặt sân'),
-                const TabItem(icon: Icons.bar_chart, title: 'Thống kê'),
-                const TabItem(icon: Icons.person, title: 'Tài khoản'),
-              ]
-            : [
-                const TabItem(icon: Icons.home, title: 'Trang chủ'),
-                const TabItem(icon: Icons.search, title: 'Tìm kiếm'),
-                const TabItem(icon: Icons.history, title: 'Lịch sử'),
-                const TabItem(icon: Icons.person, title: 'Tài khoản'),
-              ],
+        items: items,
       ),
     );
   }
@@ -126,6 +94,9 @@ class HomeContent extends StatelessWidget {
           IconButton(
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
+              // xóa role khi sign out để UI quay lại mặc định renter/không đăng nhập
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.remove('user_role');
               if (!context.mounted) return;
               Navigator.pushReplacementNamed(context, '/login');
             },
@@ -174,8 +145,10 @@ class BookingsPage extends StatelessWidget {
   }
 }
 
+// AccountPage now accepts an optional onRoleChanged callback to refresh AppShell when user logs in/out or registers
 class AccountPage extends StatelessWidget {
-  const AccountPage({super.key});
+  final VoidCallback? onRoleChanged;
+  const AccountPage({super.key, this.onRoleChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -228,11 +201,16 @@ class AccountPage extends StatelessWidget {
             onTap: () {
               if (!context.mounted) return;
               if (user == null) {
-                Navigator.pushNamed(context, '/login');
+                Navigator.pushNamed(
+                  context,
+                  '/login',
+                ).then((_) => onRoleChanged?.call());
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Đã đăng nhập: ${user.email}')),
-                );
+                // mở trang chỉnh sửa thông tin (nhỏ)
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AccountDetailsPage()),
+                ).then((_) => onRoleChanged?.call());
               }
             },
           ),
@@ -243,6 +221,9 @@ class AccountPage extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () async {
                   await FirebaseAuth.instance.signOut();
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.remove('user_role');
+                  onRoleChanged?.call();
                   if (!context.mounted) return;
                   Navigator.pushReplacementNamed(context, '/login');
                 },

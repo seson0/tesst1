@@ -66,17 +66,11 @@ class _RegisterPageState extends State<RegisterPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Đăng ký thành công!')));
+      // Give the user a short moment to see the snackbar before navigating.
       await Future.delayed(const Duration(milliseconds: 800));
       if (!mounted) return;
-
-      Navigator.pushReplacementNamed(
-        context,
-        '/login',
-        arguments: {
-          'fromRegister': true,
-          'role': _selectedRole == UserRole.owner ? 'owner' : 'renter',
-        },
-      );
+      // Replace register with login so back won't return to register
+      Navigator.pushReplacementNamed(context, '/login');
     } on FirebaseAuthException catch (e) {
       setState(() => _error = e.message);
     } catch (e) {
