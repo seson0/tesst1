@@ -1,0 +1,255 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class EditCourtPage extends StatefulWidget {
+  final Map<String, dynamic> court;
+  const EditCourtPage({super.key, required this.court});
+
+  @override
+  State<EditCourtPage> createState() => _EditCourtPageState();
+}
+
+class _EditCourtPageState extends State<EditCourtPage> {
+  late TextEditingController _nameCtrl;
+  late TextEditingController _descCtrl;
+  late TextEditingController _addressCtrl;
+  late TextEditingController _wardCtrl;
+  late TextEditingController _cityCtrl;
+  late TextEditingController _priceCtrl;
+  bool _active = true;
+  XFile? _image;
+  String? _imagePath;
+  final ImagePicker _picker = ImagePicker();
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final c = widget.court;
+    _nameCtrl = TextEditingController(text: c['name'] ?? '');
+    _descCtrl = TextEditingController(text: c['description'] ?? '');
+    _addressCtrl = TextEditingController(text: c['address'] ?? '');
+    _wardCtrl = TextEditingController(text: c['ward'] ?? '');
+    _cityCtrl = TextEditingController(text: c['city'] ?? '');
+    _priceCtrl = TextEditingController(text: c['price']?.toString() ?? '');
+    _active = (c['active'] ?? true) as bool;
+    _imagePath = c['imagePath'] ?? c['image']?.toString();
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final picked = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+      if (picked != null) {
+        setState(() {
+          _image = picked;
+          _imagePath = picked.path;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Không thể chọn ảnh: $e')));
+    }
+  }
+
+  Future<void> _saveEdit() async {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Vui lòng nhập tên sân')));
+      return;
+    }
+
+    setState(() => _saving = true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final List<String> stored =
+          prefs.getStringList('demo_courts') ?? <String>[];
+
+      final updatedItem = {
+        'id':
+            widget.court['id'] ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
+        'name': name,
+        'description': _descCtrl.text.trim(),
+        'address': _addressCtrl.text.trim(),
+        'ward': _wardCtrl.text.trim(),
+        'city': _cityCtrl.text.trim(),
+        'price': _priceCtrl.text.trim(),
+        'active': _active,
+        'imagePath': _imagePath,
+      };
+
+      bool updated = false;
+      for (var i = 0; i < stored.length; i++) {
+        try {
+          final m = jsonDecode(stored[i]) as Map<String, dynamic>;
+          if (m['id'] == updatedItem['id']) {
+            stored[i] = jsonEncode(updatedItem);
+            updated = true;
+            break;
+          }
+        } catch (_) {}
+      }
+
+      if (!updated) {
+        stored.add(jsonEncode(updatedItem));
+      }
+
+      await prefs.setStringList('demo_courts', stored);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Lưu thay đổi (demo)')));
+      Navigator.of(context).pop(true); // true = changed
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Lỗi lưu: $e')));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _descCtrl.dispose();
+    _addressCtrl.dispose();
+    _wardCtrl.dispose();
+    _cityCtrl.dispose();
+    _priceCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Sửa sân'),
+        actions: [
+          TextButton(
+            onPressed: _saving ? null : () => Navigator.of(context).pop(),
+            child: const Text('Hủy', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            GestureDetector(
+              onTap: _pickImage,
+              child: _imagePath == null
+                  ? Container(
+                      width: double.infinity,
+                      height: 160,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.image, size: 48, color: Colors.grey),
+                          SizedBox(height: 8),
+                          Text(
+                            'Chọn/Thay ảnh sân',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.file(
+                        File(_imagePath!),
+                        width: double.infinity,
+                        height: 160,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _nameCtrl,
+              decoration: const InputDecoration(labelText: 'Tên sân'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _descCtrl,
+              maxLines: 3,
+              decoration: const InputDecoration(labelText: 'Mô tả'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _addressCtrl,
+              decoration: const InputDecoration(labelText: 'Địa chỉ cụ thể'),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _wardCtrl,
+                    decoration: const InputDecoration(labelText: 'Phường/Xã'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _cityCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Tỉnh/Thành phố',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _priceCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Giá (vnđ/giờ)'),
+            ),
+            const SizedBox(height: 12),
+            SwitchListTile(
+              title: const Text('Kích hoạt sân'),
+              value: _active,
+              onChanged: (v) => setState(() => _active = v),
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _saving ? null : _saveEdit,
+                child: _saving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Lưu thay đổi'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

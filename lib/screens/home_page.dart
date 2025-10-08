@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'account_details_page.dart'; // thêm import tương đối nếu cần
+import 'add_court_page.dart'; // import trang thêm sân
+import 'edit_court_page.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -321,7 +323,8 @@ class OwnerManageCourtsPage extends StatelessWidget {
       'subtitle': 'Sân mini · 3 sân · 40.000đ/giờ',
       'booked': 18,
       'capacity': 30,
-      'image': 'https://watermark.lovepik.com/photo/20211126/large/lovepik-football-field-aerial-photography-picture_501100180.jpg',
+      'image':
+          'https://watermark.lovepik.com/photo/20211126/large/lovepik-football-field-aerial-photography-picture_501100180.jpg',
     },
   ];
 
@@ -451,13 +454,23 @@ class OwnerManageCourtsPage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         IconButton(
-                          onPressed: () {
-                            // edit sân (stub)
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Chức năng sửa sân'),
+                          onPressed: () async {
+                            // mở trang sửa sân, truyền dữ liệu sân hiện tại
+                            final changed = await Navigator.push<bool?>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => EditCourtPage(court: court),
                               ),
                             );
+                            if (changed == true) {
+                              // nếu sửa thành công, thông báo và (tuỳ cần) refresh UI
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Đã cập nhật sân (demo)'),
+                                ),
+                              );
+                              // Nếu bạn load danh sách từ SharedPreferences, gọi setState để refresh ở đây.
+                            }
                           },
                           icon: const Icon(Icons.edit),
                         ),
@@ -495,18 +508,13 @@ class OwnerManageCourtsPage extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // thêm sân mới (stub)
+          // mở trang Thêm sân (form đầy đủ)
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => Scaffold(
-                appBar: AppBar(title: const Text('Thêm sân mới')),
-                body: const Center(
-                  child: Text('Form thêm sân (chưa implement)'),
-                ),
-              ),
-            ),
-          );
+            MaterialPageRoute(builder: (_) => const AddCourtPage()),
+          ).then((_) {
+            // nếu muốn refresh danh sách courts từ prefs, có thể setState ở đây
+          });
         },
         label: const Text('Thêm sân'),
         icon: const Icon(Icons.add),
