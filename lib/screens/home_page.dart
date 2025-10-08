@@ -69,13 +69,67 @@ class _AppShellState extends State<AppShell> {
 
     final safeIndex = _currentIndex < pages.length ? _currentIndex : 0;
 
+    // build icon+label data to generate TabItem dynamically
+    final barItems = isOwner
+        ? [
+            {'icon': Icons.store_mall_directory, 'label': 'Quản lý sân'},
+            {'icon': Icons.book_online, 'label': 'Quản lý đặt sân'},
+            {'icon': Icons.bar_chart, 'label': 'Thống kê'},
+            {'icon': Icons.person, 'label': 'Tài khoản'},
+          ]
+        : [
+            {'icon': Icons.home, 'label': 'Trang chủ'},
+            {'icon': Icons.search, 'label': 'Tìm kiếm'},
+            {'icon': Icons.history, 'label': 'Lịch sử'},
+            {'icon': Icons.person, 'label': 'Tài khoản'},
+          ];
+
     return Scaffold(
       body: IndexedStack(index: safeIndex, children: pages),
-      bottomNavigationBar: ConvexAppBar(
-        style: TabStyle.react,
-        initialActiveIndex: safeIndex,
-        onTap: (i) => setState(() => _currentIndex = i),
-        items: items,
+
+      // ConvexAppBar nhưng "responsive": nếu không đủ chỗ sẽ ẩn title,
+      // nếu đủ chỗ sẽ hiển thị title đầy đủ. (Giải pháp dùng LayoutBuilder để
+      // mô phỏng hành vi Flexible cho các item của ConvexAppBar.)
+      bottomNavigationBar: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final totalWidth = constraints.maxWidth;
+            final itemCount = barItems.length;
+            final widthPerItem = totalWidth / itemCount;
+
+            // threshold để hiển thị title — điều chỉnh nếu cần
+            const minWidthForTitle = 88.0;
+            final showTitle = widthPerItem >= minWidthForTitle;
+
+            // nếu title dài mà vẫn muốn giữ, có thể cắt ngắn với ellipsis
+            String shortLabel(String label, double maxWidth) {
+              // approx char count allowed (very rough): 7 px per char
+              final approxChars = (maxWidth / 7).floor();
+              if (label.length <= approxChars) return label;
+              if (approxChars <= 3) return '';
+              return label.substring(0, approxChars - 1) + '…';
+            }
+
+            final tabItems = List<TabItem>.generate(itemCount, (i) {
+              final item = barItems[i];
+              final rawLabel = item['label'] as String;
+              final title = showTitle
+                  ? shortLabel(rawLabel, widthPerItem - 16)
+                  : '';
+              return TabItem(icon: item['icon'] as IconData, title: title);
+            });
+
+            return ConvexAppBar(
+              style: TabStyle.react,
+              initialActiveIndex: safeIndex,
+              onTap: (i) => setState(() => _currentIndex = i),
+              items: tabItems,
+              backgroundColor: Colors.white,
+              activeColor: Theme.of(context).primaryColor,
+              color: Colors.grey[600],
+            );
+          },
+        ),
       ),
     );
   }
@@ -242,11 +296,221 @@ class AccountPage extends StatelessWidget {
 class OwnerManageCourtsPage extends StatelessWidget {
   const OwnerManageCourtsPage({super.key});
 
+  // dữ liệu mẫu — thay bằng dữ liệu thật từ server/Firebase khi có
+  final List<Map<String, dynamic>> _sampleCourts = const [
+    {
+      'id': 'c1',
+      'name': 'Sân Nhà Thi Đấu A',
+      'subtitle': 'Sân cỏ nhân tạo · 2 sân · 50.000đ/giờ',
+      'booked': 12,
+      'capacity': 20,
+      'image':
+          'https://suachualaptop24h.com/upload_images/images/2024/08/06/hinh-nen-san-bong-dep-banner.jpg',
+    },
+    {
+      'id': 'c2',
+      'name': 'Sân Bóng Đêm Xanh',
+      'subtitle': 'Sân cỏ · 1 sân · 70.000đ/giờ',
+      'booked': 5,
+      'capacity': 10,
+      'image': 'https://img.lovepik.com/photo/60217/7284.jpg_wh860.jpg',
+    },
+    {
+      'id': 'c3',
+      'name': 'Sân Trung Tâm 3',
+      'subtitle': 'Sân mini · 3 sân · 40.000đ/giờ',
+      'booked': 18,
+      'capacity': 30,
+      'image': 'https://watermark.lovepik.com/photo/20211126/large/lovepik-football-field-aerial-photography-picture_501100180.jpg',
+    },
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Quản lý sân')),
-      body: const Center(child: Text('Danh sách và quản lý sân (owner)')),
+      body: ListView.separated(
+        padding: const EdgeInsets.all(12),
+        itemCount: _sampleCourts.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 8),
+        itemBuilder: (context, index) {
+          final court = _sampleCourts[index];
+          return Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 2,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () {
+                // mở trang chi tiết quản lý sân (stub)
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => Scaffold(
+                      appBar: AppBar(title: Text(court['name'])),
+                      body: Center(child: Text('Quản lý: ${court['name']}')),
+                    ),
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        court['image'],
+                        width: 96,
+                        height: 64,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 96,
+                          height: 64,
+                          color: Colors.grey.shade300,
+                          child: const Icon(Icons.image, color: Colors.white30),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            court['name'],
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            court['subtitle'],
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                size: 14,
+                                color: Colors.grey[600],
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Đã đặt ${court['booked']}/${court['capacity']}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              // Flexible cho phép phần badge giãn/thu theo không gian còn lại
+                              Flexible(
+                                fit: FlexFit.loose,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade50,
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.check_circle,
+                                        size: 12,
+                                        color: Colors.green.shade700,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Flexible(
+                                        child: Text(
+                                          'Hoạt động',
+                                          style: const TextStyle(fontSize: 12),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            // edit sân (stub)
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Chức năng sửa sân'),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.edit),
+                        ),
+                        PopupMenuButton<String>(
+                          onSelected: (v) {
+                            // xử lý menu
+                            if (v == 'delete') {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Xoá ${court['name']} (demo)'),
+                                ),
+                              );
+                            }
+                          },
+                          itemBuilder: (_) => [
+                            const PopupMenuItem(
+                              value: 'manage',
+                              child: Text('Quản lý chi tiết'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Text('Xoá'),
+                            ),
+                          ],
+                          icon: const Icon(Icons.more_vert),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          // thêm sân mới (stub)
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => Scaffold(
+                appBar: AppBar(title: const Text('Thêm sân mới')),
+                body: const Center(
+                  child: Text('Form thêm sân (chưa implement)'),
+                ),
+              ),
+            ),
+          );
+        },
+        label: const Text('Thêm sân'),
+        icon: const Icon(Icons.add),
+      ),
     );
   }
 }
