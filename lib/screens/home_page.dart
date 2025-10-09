@@ -295,6 +295,7 @@ class AccountPage extends StatelessWidget {
 
 /// -------------------- Owner pages (stubs) --------------------
 
+
 class OwnerManageCourtsPage extends StatelessWidget {
   const OwnerManageCourtsPage({super.key});
 
@@ -343,164 +344,140 @@ class OwnerManageCourtsPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             elevation: 2,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () {
-                // mở trang chi tiết quản lý sân (stub)
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => Scaffold(
-                      appBar: AppBar(title: Text(court['name'])),
-                      body: Center(child: Text('Quản lý: ${court['name']}')),
-                    ),
-                  ),
-                );
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        court['image'],
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      court['image'],
+                      width: 96,
+                      height: 64,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
                         width: 96,
                         height: 64,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          width: 96,
-                          height: 64,
-                          color: Colors.grey.shade300,
-                          child: const Icon(Icons.image, color: Colors.white30),
-                        ),
+                        color: Colors.grey.shade300,
+                        child: const Icon(Icons.image, color: Colors.white30),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            court['name'],
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          court['name'],
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            court['subtitle'],
-                            style: TextStyle(
-                              fontSize: 13,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          court['subtitle'],
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today,
+                              size: 14,
                               color: Colors.grey[600],
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.calendar_today,
-                                size: 14,
-                                color: Colors.grey[600],
+                            const SizedBox(width: 6),
+                            Text(
+                              'Đã đặt ${court['booked']}/${court['capacity']}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[700],
                               ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Đã đặt ${court['booked']}/${court['capacity']}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              // Flexible cho phép phần badge giãn/thu theo không gian còn lại
-                              Flexible(
-                                fit: FlexFit.loose,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green.shade50,
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.check_circle,
-                                        size: 12,
-                                        color: Colors.green.shade700,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Flexible(
-                                        child: Text(
-                                          'Hoạt động',
-                                          style: const TextStyle(fontSize: 12),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          onPressed: () async {
-                            // mở trang sửa sân, truyền dữ liệu sân hiện tại
-                            final changed = await Navigator.push<bool?>(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => EditCourtPage(court: court),
-                              ),
-                            );
-                            if (changed == true) {
-                              // nếu sửa thành công, thông báo và (tuỳ cần) refresh UI
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Đã cập nhật sân (demo)'),
-                                ),
-                              );
-                              // Nếu bạn load danh sách từ SharedPreferences, gọi setState để refresh ở đây.
-                            }
-                          },
-                          icon: const Icon(Icons.edit),
-                        ),
-                        PopupMenuButton<String>(
-                          onSelected: (v) {
-                            // xử lý menu
-                            if (v == 'delete') {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Xoá ${court['name']} (demo)'),
-                                ),
-                              );
-                            }
-                          },
-                          itemBuilder: (_) => [
-                            const PopupMenuItem(
-                              value: 'manage',
-                              child: Text('Quản lý chi tiết'),
                             ),
-                            const PopupMenuItem(
-                              value: 'delete',
-                              child: Text('Xoá'),
+                            const SizedBox(width: 12),
+                            Flexible(
+                              fit: FlexFit.loose,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade50,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle,
+                                      size: 12,
+                                      color: Colors.green.shade700,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Flexible(
+                                      child: Text(
+                                        'Hoạt động',
+                                        style: const TextStyle(fontSize: 12),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ],
-                          icon: const Icon(Icons.more_vert),
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        onPressed: () async {
+                          final changed = await Navigator.push<bool?>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => EditCourtPage(court: court),
+                            ),
+                          );
+                          if (changed == true) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Đã cập nhật sân (demo)'),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.edit),
+                      ),
+                      PopupMenuButton<String>(
+                        onSelected: (v) {
+                          if (v == 'delete') {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Xoá ${court['name']} (demo)'),
+                              ),
+                            );
+                          }
+                        },
+                        itemBuilder: (_) => const [
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: Text('Xoá'),
+                          ),
+                        ],
+                        icon: const Icon(Icons.more_vert),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           );
@@ -508,12 +485,11 @@ class OwnerManageCourtsPage extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // mở trang Thêm sân (form đầy đủ)
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const AddCourtPage()),
           ).then((_) {
-            // nếu muốn refresh danh sách courts từ prefs, có thể setState ở đây
+            // refresh nếu cần
           });
         },
         label: const Text('Thêm sân'),
@@ -523,17 +499,287 @@ class OwnerManageCourtsPage extends StatelessWidget {
   }
 }
 
-class OwnerBookingsPage extends StatelessWidget {
+
+class OwnerBookingsPage extends StatefulWidget {
   const OwnerBookingsPage({super.key});
+
+  @override
+  State<OwnerBookingsPage> createState() => _OwnerBookingsPageState();
+}
+
+class _OwnerBookingsPageState extends State<OwnerBookingsPage> {
+  String _filter = 'Tất cả';
+
+  final List<Map<String, dynamic>> _bookings = [
+    {
+      'id': 1,
+      'customer': 'Hoang Le Huy',
+      'email': 'lehuy0569@gmail.com',
+      'court': 'Sân 5 người A',
+      'date': '2025-06-17',
+      'time': '08:00 - 10:00',
+      'price': '210.000 VND/giờ',
+      'status': 'Đã hủy',
+      'note': 'Không có',
+    },
+    {
+      'id': 2,
+      'customer': '1032 Lê Huy Hoàng',
+      'email': 'lehuy456@gmail.com',
+      'court': 'Sân 5 người B',
+      'date': '2025-06-17',
+      'time': '18:00 - 20:00',
+      'price': '190.000 VND/giờ',
+      'status': 'Đã xác nhận',
+      'note': 'Không có',
+    },
+    {
+      'id': 3,
+      'customer': 'lehuynhhoang',
+      'email': 'dnn@gmail.com',
+      'court': 'Sân 5 người B',
+      'date': '2025-06-17',
+      'time': '08:00 - 10:00',
+      'price': '190.000 VND/giờ',
+      'status': 'Chờ duyệt',
+      'note': 'cho xin sân',
+    },
+  ];
+
+  List<Map<String, dynamic>> get _filteredBookings {
+    if (_filter == 'Tất cả') return _bookings;
+    return _bookings.where((b) => b['status'] == _filter).toList();
+  }
+
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'Chờ duyệt':
+        return Colors.orange;
+      case 'Đã xác nhận':
+        return Colors.green;
+      case 'Đã hủy':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // --- Giữ hàm BUILD FILTER bên trong State (để setState và _filter có scope) ---
+  Widget _buildFilterButton(String label) {
+    final bool selected = _filter == label;
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (val) {
+        setState(() => _filter = label);
+      },
+      selectedColor: Colors.blue,
+      labelStyle: TextStyle(
+        color: selected ? Colors.white : Colors.black,
+        fontWeight: FontWeight.w500,
+      ),
+      backgroundColor: Colors.grey[200],
+    );
+  }
+
+  // --- Helper xây widget cho cột Thao tác (đặt trong State để dùng setState/context) ---
+  Widget _buildActionCell(Map<String, dynamic> b) {
+    final status = b['status'] as String;
+
+    // Đã hủy -> ẩn nút (hiện dấu gạch)
+    if (status == 'Đã hủy') {
+      return const Text('—', style: TextStyle(color: Colors.grey));
+    }
+
+    // Đã xác nhận -> chỉ hiện nút Hủy
+    if (status == 'Đã xác nhận') {
+      return Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.cancel_outlined, color: Colors.red),
+            tooltip: 'Hủy đơn đặt sân',
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Hủy đơn đặt sân'),
+                  content: Text(
+                      'Bạn có chắc muốn hủy đơn đặt sân của khách hàng "${b['customer']}" không?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Quay lại'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() => b['status'] = 'Đã hủy');
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Đơn đặt sân đã bị hủy.')),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                      child: const Text('Xác nhận hủy'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      );
+    }
+
+    // Chờ duyệt -> hiển thị cả Xác nhận + Hủy
+    return Row(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.check_circle_outline, color: Colors.green),
+          tooltip: 'Xác nhận đặt sân',
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Xác nhận đặt sân'),
+                content: Text(
+                    'Bạn có chắc muốn xác nhận đơn đặt sân của khách hàng "${b['customer']}" không?'),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() => b['status'] = 'Đã xác nhận');
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Đơn đặt sân đã được xác nhận.')),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                    child: const Text('Xác nhận'),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+        IconButton(
+          icon: const Icon(Icons.cancel_outlined, color: Colors.red),
+          tooltip: 'Hủy đơn đặt sân',
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Hủy đơn đặt sân'),
+                content: Text(
+                    'Bạn có chắc muốn hủy đơn đặt sân của khách hàng "${b['customer']}" không?'),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(context), child: const Text('Quay lại')),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() => b['status'] = 'Đã hủy');
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Đơn đặt sân đã bị hủy.')),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                    child: const Text('Xác nhận hủy'),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Quản lý đặt sân')),
-      body: const Center(child: Text('Quản lý các đặt sân của chủ sân')),
+      appBar: AppBar(
+        title: const Text('Quản lý booking'),
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Chức năng thống kê (demo)')),
+              );
+            },
+            icon: const Icon(Icons.bar_chart, color: Colors.white),
+            label: const Text('Thống kê', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          const SizedBox(height: 8),
+          // Bộ lọc trạng thái
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Wrap(
+              spacing: 8,
+              children: [
+                _buildFilterButton('Tất cả'),
+                _buildFilterButton('Chờ duyệt'),
+                _buildFilterButton('Đã xác nhận'),
+                _buildFilterButton('Đã hủy'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                columns: const [
+                  DataColumn(label: Text('ID')),
+                  DataColumn(label: Text('Khách hàng')),
+                  DataColumn(label: Text('Sân')),
+                  DataColumn(label: Text('Ngày đặt')),
+                  DataColumn(label: Text('Khung giờ')),
+                  DataColumn(label: Text('Trạng thái')),
+                  DataColumn(label: Text('Ghi chú')),
+                  DataColumn(label: Text('Thao tác')),
+                ],
+                rows: _filteredBookings.map((b) {
+                  return DataRow(cells: [
+                    DataCell(Text(b['id'].toString())),
+                    DataCell(Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(b['customer'], style: const TextStyle(fontWeight: FontWeight.w500)),
+                        Text(b['email'], style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                      ],
+                    )),
+                    DataCell(Text(b['court'])),
+                    DataCell(Text(b['date'])),
+                    DataCell(Text(b['time'])),
+                    DataCell(Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _statusColor(b['status']).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        b['status'],
+                        style: TextStyle(color: _statusColor(b['status']), fontWeight: FontWeight.w600),
+                      ),
+                    )),
+                    DataCell(Text(b['note'])),
+                    DataCell(_buildActionCell(b)),
+                  ]);
+                }).toList(),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
+
+
 
 class OwnerStatsPage extends StatelessWidget {
   const OwnerStatsPage({super.key});
