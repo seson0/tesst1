@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,11 +19,12 @@ class _EditCourtPageState extends State<EditCourtPage> {
   late TextEditingController _wardCtrl;
   late TextEditingController _cityCtrl;
   late TextEditingController _priceCtrl;
+
   bool _active = true;
-  XFile? _image;
-  String? _imagePath;
-  final ImagePicker _picker = ImagePicker();
   bool _saving = false;
+
+  final ImagePicker _picker = ImagePicker();
+  List<String> _imagePaths = [];
 
   @override
   void initState() {
@@ -37,47 +37,55 @@ class _EditCourtPageState extends State<EditCourtPage> {
     _cityCtrl = TextEditingController(text: c['city'] ?? '');
     _priceCtrl = TextEditingController(text: c['price']?.toString() ?? '');
     _active = (c['active'] ?? true) as bool;
-    _imagePath = c['imagePath'] ?? c['image']?.toString();
+
+    // Lấy danh sách ảnh (ưu tiên mảng imagePaths, fallback sang imagePath cũ)
+    if (c['imagePaths'] != null && c['imagePaths'] is List) {
+      _imagePaths = List<String>.from(c['imagePaths']);
+    } else if (c['imagePath'] != null) {
+      _imagePaths = [c['imagePath'].toString()];
+    } else {
+      _imagePaths = [];
+    }
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImages() async {
     try {
-      final picked = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 80,
-      );
-      if (picked != null) {
+      final picked = await _picker.pickMultiImage(imageQuality: 80);
+      if (picked.isNotEmpty) {
         setState(() {
-          _image = picked;
-          _imagePath = picked.path;
+          _imagePaths.addAll(picked.map((e) => e.path));
         });
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Không thể chọn ảnh: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Không thể chọn ảnh: $e')),
+      );
     }
+  }
+
+  void _removeImage(int index) {
+    setState(() {
+      _imagePaths.removeAt(index);
+    });
   }
 
   Future<void> _saveEdit() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Vui lòng nhập tên sân')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng nhập tên sân')),
+      );
       return;
     }
 
     setState(() => _saving = true);
     try {
       final prefs = await SharedPreferences.getInstance();
-      final List<String> stored =
-          prefs.getStringList('demo_courts') ?? <String>[];
+      final stored = prefs.getStringList('demo_courts') ?? <String>[];
 
       final updatedItem = {
-        'id':
-            widget.court['id'] ??
+        'id': widget.court['id'] ??
             DateTime.now().millisecondsSinceEpoch.toString(),
         'name': name,
         'description': _descCtrl.text.trim(),
@@ -86,7 +94,7 @@ class _EditCourtPageState extends State<EditCourtPage> {
         'city': _cityCtrl.text.trim(),
         'price': _priceCtrl.text.trim(),
         'active': _active,
-        'imagePath': _imagePath,
+        'imagePaths': _imagePaths,
       };
 
       bool updated = false;
@@ -101,22 +109,19 @@ class _EditCourtPageState extends State<EditCourtPage> {
         } catch (_) {}
       }
 
-      if (!updated) {
-        stored.add(jsonEncode(updatedItem));
-      }
-
+      if (!updated) stored.add(jsonEncode(updatedItem));
       await prefs.setStringList('demo_courts', stored);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Lưu thay đổi (demo)')));
-      Navigator.of(context).pop(true); // true = changed
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lưu thay đổi (demo)')),
+      );
+      Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Lỗi lưu: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi lưu: $e')),
+      );
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -149,38 +154,62 @@ class _EditCourtPageState extends State<EditCourtPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            GestureDetector(
-              onTap: _pickImage,
-              child: _imagePath == null
-                  ? Container(
-                      width: double.infinity,
-                      height: 160,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
+            // Hiển thị nhiều ảnh
+            SizedBox(
+              height: 140,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _imagePaths.length + 1,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  if (index == _imagePaths.length) {
+                    return GestureDetector(
+                      onTap: _pickImages,
+                      child: Container(
+                        width: 140,
+                        height: 140,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: const Icon(Icons.add_a_photo,
+                            size: 40, color: Colors.grey),
+                      ),
+                    );
+                  }
+                  final path = _imagePaths[index];
+                  return Stack(
+                    children: [
+                      ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
+                        child: Image.file(
+                          File(path),
+                          width: 140,
+                          height: 140,
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.image, size: 48, color: Colors.grey),
-                          SizedBox(height: 8),
-                          Text(
-                            'Chọn/Thay ảnh sân',
-                            style: TextStyle(color: Colors.grey),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: GestureDetector(
+                          onTap: () => _removeImage(index),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
+                            padding: const EdgeInsets.all(4),
+                            child: const Icon(Icons.close,
+                                color: Colors.white, size: 16),
                           ),
-                        ],
+                        ),
                       ),
-                    )
-                  : ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.file(
-                        File(_imagePath!),
-                        width: double.infinity,
-                        height: 160,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+                    ],
+                  );
+                },
+              ),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -211,9 +240,7 @@ class _EditCourtPageState extends State<EditCourtPage> {
                 Expanded(
                   child: TextField(
                     controller: _cityCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Tỉnh/Thành phố',
-                    ),
+                    decoration: const InputDecoration(labelText: 'Tỉnh/Thành phố'),
                   ),
                 ),
               ],

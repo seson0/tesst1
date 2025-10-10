@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,32 +21,30 @@ class _AddCourtPageState extends State<AddCourtPage> {
 
   bool _active = true;
   bool _saving = false;
-  XFile? _image;
-  final ImagePicker _picker = ImagePicker();
 
-  Future<void> _pickImage() async {
+  final ImagePicker _picker = ImagePicker();
+  List<XFile> _images = [];
+
+  Future<void> _pickImages() async {
     try {
-      final picked = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 80,
-      );
-      if (picked != null) {
-        setState(() => _image = picked);
+      final picked = await _picker.pickMultiImage(imageQuality: 80);
+      if (picked.isNotEmpty) {
+        setState(() => _images = picked);
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Không thể chọn ảnh: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Không thể chọn ảnh: $e')),
+      );
     }
   }
 
   Future<void> _saveCourt() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Vui lòng nhập tên sân')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng nhập tên sân')),
+      );
       return;
     }
 
@@ -65,22 +62,22 @@ class _AddCourtPageState extends State<AddCourtPage> {
         'city': _cityCtrl.text.trim(),
         'price': _priceCtrl.text.trim(),
         'active': _active,
-        'imagePath': _image?.path,
+        'imagePaths': _images.map((x) => x.path).toList(),
       };
 
       existing.add(jsonEncode(item));
       await prefs.setStringList('demo_courts', existing);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Đã lưu sân (demo)')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đã lưu sân (demo)')),
+      );
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Lỗi khi lưu: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi lưu: $e')),
+      );
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -113,9 +110,10 @@ class _AddCourtPageState extends State<AddCourtPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // --- Phần chọn nhiều ảnh ---
             GestureDetector(
-              onTap: _pickImage,
-              child: _image == null
+              onTap: _pickImages,
+              child: _images.isEmpty
                   ? Container(
                       width: double.infinity,
                       height: 160,
@@ -129,24 +127,70 @@ class _AddCourtPageState extends State<AddCourtPage> {
                         children: const [
                           Icon(Icons.image, size: 48, color: Colors.grey),
                           SizedBox(height: 8),
-                          Text(
-                            'Chọn ảnh sân',
-                            style: TextStyle(color: Colors.grey),
-                          ),
+                          Text('Chọn nhiều ảnh sân',
+                              style: TextStyle(color: Colors.grey)),
                         ],
                       ),
                     )
-                  : ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.file(
-                        File(_image!.path),
-                        width: double.infinity,
-                        height: 160,
-                        fit: BoxFit.cover,
-                      ),
+                  : Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ..._images.map(
+                          (img) => Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(
+                                  File(img.path),
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Positioned(
+                                top: 2,
+                                right: 2,
+                                child: InkWell(
+                                  onTap: () {
+                                    setState(() =>
+                                        _images.removeWhere((x) => x == img));
+                                  },
+                                  child: Container(
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.black54,
+                                    ),
+                                    padding: const EdgeInsets.all(2),
+                                    child: const Icon(Icons.close,
+                                        color: Colors.white, size: 16),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Nút thêm ảnh nữa
+                        GestureDetector(
+                          onTap: _pickImages,
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: const Icon(Icons.add_a_photo,
+                                color: Colors.grey),
+                          ),
+                        ),
+                      ],
                     ),
             ),
             const SizedBox(height: 12),
+
+            // --- Các trường nhập liệu khác ---
             TextField(
               controller: _nameCtrl,
               decoration: const InputDecoration(labelText: 'Tên sân'),
@@ -168,7 +212,8 @@ class _AddCourtPageState extends State<AddCourtPage> {
                 Expanded(
                   child: TextField(
                     controller: _wardCtrl,
-                    decoration: const InputDecoration(labelText: 'Phường/Xã'),
+                    decoration:
+                        const InputDecoration(labelText: 'Phường/Xã'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -176,8 +221,7 @@ class _AddCourtPageState extends State<AddCourtPage> {
                   child: TextField(
                     controller: _cityCtrl,
                     decoration: const InputDecoration(
-                      labelText: 'Tỉnh/Thành phố',
-                    ),
+                        labelText: 'Tỉnh/Thành phố'),
                   ),
                 ),
               ],
@@ -186,7 +230,8 @@ class _AddCourtPageState extends State<AddCourtPage> {
             TextField(
               controller: _priceCtrl,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Giá (vnđ/giờ)'),
+              decoration:
+                  const InputDecoration(labelText: 'Giá (vnđ/giờ)'),
             ),
             const SizedBox(height: 12),
             SwitchListTile(

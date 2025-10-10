@@ -5,6 +5,8 @@ import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'account_details_page.dart'; // thêm import tương đối nếu cần
 import 'add_court_page.dart'; // import trang thêm sân
 import 'edit_court_page.dart';
+import 'owner_court_detail_page.dart';
+
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -339,145 +341,163 @@ class OwnerManageCourtsPage extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(height: 8),
         itemBuilder: (context, index) {
           final court = _sampleCourts[index];
-          return Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      court['image'],
-                      width: 96,
-                      height: 64,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
+          return GestureDetector(
+            onTap: () {
+              // Chuyển sang trang chi tiết sân
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => OwnerCourtDetailPage(court: court),
+                ),
+              );
+            },
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Row(
+                  children: [
+                    // Ảnh
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        court['image'],
                         width: 96,
                         height: 64,
-                        color: Colors.grey.shade300,
-                        child: const Icon(Icons.image, color: Colors.white30),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 96,
+                          height: 64,
+                          color: Colors.grey.shade300,
+                          child: const Icon(Icons.image, color: Colors.white30),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          court['name'],
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                    const SizedBox(width: 12),
+
+                    // Thông tin sân
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            court['name'],
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          court['subtitle'],
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.calendar_today,
-                              size: 14,
+                          const SizedBox(height: 6),
+                          Text(
+                            court['subtitle'],
+                            style: TextStyle(
+                              fontSize: 13,
                               color: Colors.grey[600],
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Đã đặt ${court['booked']}/${court['capacity']}',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[700],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                size: 14,
+                                color: Colors.grey[600],
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Flexible(
-                              fit: FlexFit.loose,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 6,
+                              const SizedBox(width: 6),
+                              Text(
+                                'Đã đặt ${court['booked']}/${court['capacity']}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[700],
                                 ),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.shade50,
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.check_circle,
-                                      size: 12,
-                                      color: Colors.green.shade700,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Flexible(
-                                      child: Text(
-                                        'Hoạt động',
-                                        style: const TextStyle(fontSize: 12),
-                                        overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(width: 12),
+                              Flexible(
+                                fit: FlexFit.loose,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade50,
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.check_circle,
+                                        size: 12,
+                                        color: Colors.green.shade700,
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 6),
+                                      Flexible(
+                                        child: Text(
+                                          'Hoạt động',
+                                          style:
+                                              const TextStyle(fontSize: 12),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Cột thao tác
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          onPressed: () async {
+                            final changed = await Navigator.push<bool?>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => EditCourtPage(court: court),
+                              ),
+                            );
+                            if (changed == true) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Đã cập nhật sân (demo)'),
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.edit),
+                        ),
+                        PopupMenuButton<String>(
+                          onSelected: (v) {
+                            if (v == 'delete') {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content:
+                                      Text('Xoá ${court['name']} (demo)'),
+                                ),
+                              );
+                            }
+                          },
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Text('Xoá'),
                             ),
                           ],
+                          icon: const Icon(Icons.more_vert),
                         ),
                       ],
                     ),
-                  ),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        onPressed: () async {
-                          final changed = await Navigator.push<bool?>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => EditCourtPage(court: court),
-                            ),
-                          );
-                          if (changed == true) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Đã cập nhật sân (demo)'),
-                              ),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.edit),
-                      ),
-                      PopupMenuButton<String>(
-                        onSelected: (v) {
-                          if (v == 'delete') {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Xoá ${court['name']} (demo)'),
-                              ),
-                            );
-                          }
-                        },
-                        itemBuilder: (_) => const [
-                          PopupMenuItem(
-                            value: 'delete',
-                            child: Text('Xoá'),
-                          ),
-                        ],
-                        icon: const Icon(Icons.more_vert),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
@@ -488,9 +508,7 @@ class OwnerManageCourtsPage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const AddCourtPage()),
-          ).then((_) {
-            // refresh nếu cần
-          });
+          );
         },
         label: const Text('Thêm sân'),
         icon: const Icon(Icons.add),
@@ -498,7 +516,6 @@ class OwnerManageCourtsPage extends StatelessWidget {
     );
   }
 }
-
 
 class OwnerBookingsPage extends StatefulWidget {
   const OwnerBookingsPage({super.key});
@@ -779,16 +796,253 @@ class _OwnerBookingsPageState extends State<OwnerBookingsPage> {
   }
 }
 
-
-
 class OwnerStatsPage extends StatelessWidget {
   const OwnerStatsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Dữ liệu giả lập — sau này có thể thay bằng dữ liệu thật từ API
+    final totalBooking = 3;
+    final pending = 0;
+    final confirmed = 1;
+    final canceled = 2;
+    final revenue = 179000;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Thống kê')),
-      body: const Center(child: Text('Thống kê doanh thu / lượt đặt (owner)')),
+      appBar: AppBar(
+        title: const Text('Thống kê booking'),
+        centerTitle: true,
+        backgroundColor: Colors.blueAccent,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // --- Các ô thống kê đầu ---
+              GridView.count(
+                crossAxisCount: 2,
+                childAspectRatio: 2.2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                children: [
+                  _buildStatCard('Tổng booking', totalBooking.toString(),
+                      Icons.calendar_today, Colors.blue),
+                  _buildStatCard('Chờ duyệt', pending.toString(),
+                      Icons.access_time, Colors.orange),
+                  _buildStatCard('Đã xác nhận', confirmed.toString(),
+                      Icons.check_circle, Colors.green),
+                  _buildStatCard('Đã huỷ', canceled.toString(),
+                      Icons.cancel, Colors.red),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // --- Thống kê theo thời gian ---
+              const Text(
+                'Thống kê theo thời gian',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Card(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                elevation: 2,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: const [
+                      Flexible(child: _TimeStatItem(title: 'Hôm nay', count: 0)),
+                      Flexible(child: _TimeStatItem(title: 'Tháng này', count: 3)),
+                      Flexible(child: _TimeStatItem(title: 'Tháng trước', count: 0)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // --- Doanh thu ---
+              Card(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                elevation: 2,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Doanh thu',
+                        style:
+                            TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              '$revenue VND',
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ),
+                          const Flexible(
+                            child: Text(
+                              'Tổng doanh thu từ booking đã xác nhận',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey,
+                              ),
+                              textAlign: TextAlign.end,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // --- Phân bố trạng thái booking ---
+              const Text(
+                'Phân bố trạng thái booking',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Column(
+                children: [
+                  _buildStatusBar('Chờ duyệt', pending, Colors.orange),
+                  _buildStatusBar('Đã xác nhận', confirmed, Colors.green),
+                  _buildStatusBar('Đã huỷ', canceled, Colors.red),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // --- Hoạt động gần đây ---
+              const Text(
+                'Hoạt động gần đây',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Card(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                elevation: 2,
+                child: ListTile(
+                  leading: const Icon(Icons.history, color: Colors.blueAccent),
+                  title: const Text('Không có hoạt động mới'),
+                  subtitle: const Text('Cập nhật gần nhất: 19/06/2025 05:27'),
+                  trailing: const Text(
+                    '+0.0%',
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- Hàm dựng ô thống kê ---
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 3,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              backgroundColor: color.withOpacity(0.2),
+              child: Icon(icon, color: color),
+            ),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontSize: 13, color: Colors.grey),
+                  ),
+                  Text(
+                    value,
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: color),
+                  ),
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- Hàm dựng thanh trạng thái ---
+  Widget _buildStatusBar(String title, int value, Color color) {
+    final total = 3;
+    final percent = total > 0 ? (value / total) : 0;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('$title (${(percent * 100).toStringAsFixed(1)}%)'),
+          const SizedBox(height: 4),
+          LinearProgressIndicator(
+            value: percent.toDouble(), // ✅ ép kiểu double để tránh lỗi
+            color: color,
+            backgroundColor: Colors.grey[200],
+            minHeight: 8,
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ],
+      ),
     );
   }
 }
+
+// --- Widget phụ hiển thị thống kê theo thời gian ---
+class _TimeStatItem extends StatelessWidget {
+  final String title;
+  final int count;
+
+  const _TimeStatItem({required this.title, required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(title,
+            style: const TextStyle(fontSize: 13, color: Colors.grey)),
+        const SizedBox(height: 4),
+        Text('$count',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+}
+
+
