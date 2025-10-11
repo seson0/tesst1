@@ -6,7 +6,7 @@ import 'account_details_page.dart'; // thêm import tương đối nếu cần
 import 'add_court_page.dart'; // import trang thêm sân
 import 'edit_court_page.dart';
 import 'owner_court_detail_page.dart';
-
+import 'package:diacritic/diacritic.dart'; // Thư viện giúp loại bỏ dấu tiếng Việt (add vào pubspec.yaml)
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -47,9 +47,9 @@ class _AppShellState extends State<AppShell> {
             AccountPage(onRoleChanged: _onRoleChanged),
           ]
         : <Widget>[
-            const HomeContent(),
+            const UserCourtsPage(),
             const SearchPage(),
-            const BookingsPage(),
+            const SearchPage(),
             AccountPage(onRoleChanged: _onRoleChanged),
           ];
 
@@ -139,50 +139,403 @@ class _AppShellState extends State<AppShell> {
   }
 }
 
-class HomeContent extends StatelessWidget {
-  const HomeContent({super.key});
+
+// Trang dành cho người thuê sân — chỉ xem danh sách sân
+class UserCourtsPage extends StatelessWidget {
+  const UserCourtsPage({super.key});
+
+  // Dữ liệu mẫu — sau này thay bằng dữ liệu từ server/Firebase
+  final List<Map<String, dynamic>> _sampleCourts = const [
+    {
+      'id': 'c1',
+      'name': 'Sân Nhà Thi Đấu A',
+      'subtitle': 'Sân cỏ nhân tạo · 2 sân · 50.000đ/giờ',
+      'booked': 12,
+      'capacity': 20,
+      'image':
+          'https://suachualaptop24h.com/upload_images/images/2024/08/06/hinh-nen-san-bong-dep-banner.jpg',
+    },
+    {
+      'id': 'c2',
+      'name': 'Sân Bóng Đêm Xanh',
+      'subtitle': 'Sân cỏ · 1 sân · 70.000đ/giờ',
+      'booked': 5,
+      'capacity': 10,
+      'image': 'https://img.lovepik.com/photo/60217/7284.jpg_wh860.jpg',
+    },
+    {
+      'id': 'c3',
+      'name': 'Sân Trung Tâm 3',
+      'subtitle': 'Sân mini · 3 sân · 40.000đ/giờ',
+      'booked': 18,
+      'capacity': 30,
+      'image':
+          'https://watermark.lovepik.com/photo/20211126/large/lovepik-football-field-aerial-photography-picture_501100180.jpg',
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Trang chính'),
-        actions: [
-          IconButton(
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              // xóa role khi sign out để UI quay lại mặc định renter/không đăng nhập
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.remove('user_role');
-              if (!context.mounted) return;
-              Navigator.pushReplacementNamed(context, '/login');
+      appBar: AppBar(title: const Text('Danh sách sân cho thuê')),
+      body: ListView.separated(
+        padding: const EdgeInsets.all(12),
+        itemCount: _sampleCourts.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 8),
+        itemBuilder: (context, index) {
+          final court = _sampleCourts[index];
+          return GestureDetector(
+            onTap: () {
+              // Mở trang chi tiết sân (nếu có)
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CourtDetailPage(court: court),
+                ),
+              );
             },
-            icon: const Icon(Icons.logout),
-            tooltip: 'Đăng xuất',
-          ),
-        ],
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Row(
+                  children: [
+                    // Ảnh sân
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        court['image'],
+                        width: 96,
+                        height: 64,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 96,
+                          height: 64,
+                          color: Colors.grey.shade300,
+                          child: const Icon(Icons.image, color: Colors.white30),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // Thông tin sân
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            court['name'],
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            court['subtitle'],
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                size: 14,
+                                color: Colors.grey[600],
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Đã đặt ${court['booked']}/${court['capacity']}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade50,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle,
+                                      size: 12,
+                                      color: Colors.green.shade700,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    const Text(
+                                      'Hoạt động',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
-      body: Center(child: Text('Xin chào ${user?.email ?? 'người dùng'}')),
     );
   }
 }
 
-class SearchPage extends StatelessWidget {
-  const SearchPage({super.key});
+// Trang chi tiết sân (tạm thời demo)
+class CourtDetailPage extends StatelessWidget {
+  final Map<String, dynamic> court;
+  const CourtDetailPage({super.key, required this.court});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tìm kiếm')),
+      appBar: AppBar(title: Text(court['name'])),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Image.network(
+            court['image'],
+            width: double.infinity,
+            height: 200,
+            fit: BoxFit.cover,
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              court['subtitle'],
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'Tình trạng: Đã đặt ${court['booked']}/${court['capacity']}',
+              style: TextStyle(color: Colors.grey[700]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+
+class SearchPage extends StatefulWidget {
+  const SearchPage({super.key});
+
+  @override
+  State<SearchPage> createState() => _SearchPageState();
+}
+
+class _SearchPageState extends State<SearchPage> {
+  final TextEditingController _searchCtrl = TextEditingController();
+
+  final List<Map<String, dynamic>> _allCourts = const [
+    {
+      'id': 'c1',
+      'name': 'Sân Nhà Thi Đấu A',
+      'subtitle': 'Sân cỏ nhân tạo · 2 sân · 50.000đ/giờ',
+      'booked': 12,
+      'capacity': 20,
+      'image':
+          'https://suachualaptop24h.com/upload_images/images/2024/08/06/hinh-nen-san-bong-dep-banner.jpg',
+    },
+    {
+      'id': 'c2',
+      'name': 'Sân Bóng Đêm Xanh',
+      'subtitle': 'Sân cỏ · 1 sân · 70.000đ/giờ',
+      'booked': 5,
+      'capacity': 10,
+      'image': 'https://img.lovepik.com/photo/60217/7284.jpg_wh860.jpg',
+    },
+    {
+      'id': 'c3',
+      'name': 'Sân Trung Tâm 3',
+      'subtitle': 'Sân mini · 3 sân · 40.000đ/giờ',
+      'booked': 18,
+      'capacity': 30,
+      'image':
+          'https://watermark.lovepik.com/photo/20211126/large/lovepik-football-field-aerial-photography-picture_501100180.jpg',
+    },
+  ];
+
+  List<Map<String, dynamic>> _filteredCourts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredCourts = _allCourts;
+  }
+
+  /// Hàm loại bỏ dấu + chữ hoa để so sánh
+  String normalizeText(String text) {
+    return removeDiacritics(text.toLowerCase());
+  }
+
+  void _filterCourts(String query) {
+    final normalizedQuery = normalizeText(query);
+
+    final results = _allCourts.where((court) {
+      final name = normalizeText(court['name']);
+      return name.contains(normalizedQuery);
+    }).toList();
+
+    setState(() {
+      _filteredCourts = results;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Tìm kiếm sân')),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
-          children: const [
-            TextField(decoration: InputDecoration(labelText: 'Tìm kiếm sân')),
-            SizedBox(height: 16),
+          children: [
+            TextField(
+              controller: _searchCtrl,
+              decoration: InputDecoration(
+                labelText: 'Nhập tên sân cần tìm (không cần dấu)...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onChanged: _filterCourts,
+            ),
+            const SizedBox(height: 16),
             Expanded(
-              child: Center(child: Text('Kết quả tìm kiếm sẽ hiển thị ở đây')),
+              child: _filteredCourts.isEmpty
+                  ? const Center(child: Text('Không tìm thấy sân nào.'))
+                  : ListView.separated(
+                      itemCount: _filteredCourts.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final court = _filteredCourts[index];
+                        return Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: Row(
+                              children: [
+                                // Ảnh sân
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    court['image'],
+                                    width: 96,
+                                    height: 64,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      width: 96,
+                                      height: 64,
+                                      color: Colors.grey.shade300,
+                                      child: const Icon(Icons.image,
+                                          color: Colors.white30),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                // Thông tin sân
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        court['name'],
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        court['subtitle'],
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.calendar_today,
+                                            size: 14,
+                                            color: Colors.grey[600],
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            'Đã đặt ${court['booked']}/${court['capacity']}',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 6,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.green.shade50,
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.check_circle,
+                                                  size: 12,
+                                                  color: Colors.green.shade700,
+                                                ),
+                                                const SizedBox(width: 6),
+                                                const Text(
+                                                  'Hoạt động',
+                                                  style:
+                                                      TextStyle(fontSize: 12),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -191,17 +544,6 @@ class SearchPage extends StatelessWidget {
   }
 }
 
-class BookingsPage extends StatelessWidget {
-  const BookingsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Lịch thuê sân')),
-      body: const Center(child: Text('Danh sách lịch thuê sẽ hiển thị ở đây')),
-    );
-  }
-}
 
 // AccountPage now accepts an optional onRoleChanged callback to refresh AppShell when user logs in/out or registers
 class AccountPage extends StatelessWidget {
@@ -307,6 +649,12 @@ class OwnerManageCourtsPage extends StatelessWidget {
       'id': 'c1',
       'name': 'Sân Nhà Thi Đấu A',
       'subtitle': 'Sân cỏ nhân tạo · 2 sân · 50.000đ/giờ',
+      'description':'là sân nhà thi đấu tốt nhất của chúng tôi',
+      'price': '50.000đ/giờ',
+      'address': '123 Đường A, Quận B, TP.HCM',
+      'courtType': 'bóng đá',
+      'playerType': '5 người',
+      'ward': 'Phường 1',
       'booked': 12,
       'capacity': 20,
       'image':
@@ -316,6 +664,12 @@ class OwnerManageCourtsPage extends StatelessWidget {
       'id': 'c2',
       'name': 'Sân Bóng Đêm Xanh',
       'subtitle': 'Sân cỏ · 1 sân · 70.000đ/giờ',
+      'description':'là sân nhà thi đấu tốt nhất của chúng tôi',
+      'price': '70.000đ/giờ',
+      'address': '123 Đường A, Quận B, TP.HCM',
+      'courtType': 'bóng bàn',
+      'playerType': '2 người',
+      'ward': 'Phường 1',
       'booked': 5,
       'capacity': 10,
       'image': 'https://img.lovepik.com/photo/60217/7284.jpg_wh860.jpg',
@@ -324,6 +678,12 @@ class OwnerManageCourtsPage extends StatelessWidget {
       'id': 'c3',
       'name': 'Sân Trung Tâm 3',
       'subtitle': 'Sân mini · 3 sân · 40.000đ/giờ',
+      'description':'là sân nhà thi đấu tốt nhất của chúng tôi',
+      'price': '40.000đ/giờ',
+      'address': '123 Đường A, Quận B, TP.HCM',
+      'courtType': 'bóng rổ',
+      'playerType': '11 người',
+      'ward': 'Phường 1',
       'booked': 18,
       'capacity': 30,
       'image':

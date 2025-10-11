@@ -15,6 +15,7 @@ dependencies:
   easy_image_viewer: ^1.5.1
   shared_preferences: any
   convex_bottom_bar: any
+  diacritic: ^0.1.6
 
 dev_dependencies:
   flutter_test:

@@ -22,6 +22,23 @@ class _AddCourtPageState extends State<AddCourtPage> {
   bool _active = true;
   bool _saving = false;
 
+  // --- Dropdown loại môn thể thao ---
+  String? _selectedType;
+  final List<String> _courtTypes = [
+    'Bóng đá',
+    'Bóng rổ',
+    'Bóng bàn',
+    'Quần vợt',
+  ];
+
+  // --- Dropdown loại sân theo số người ---
+  String? _selectedSize;
+  final List<String> _courtSizes = [
+    'Sân 5 người',
+    'Sân 7 người',
+    'Sân 11 người',
+  ];
+
   final ImagePicker _picker = ImagePicker();
   List<XFile> _images = [];
 
@@ -41,9 +58,24 @@ class _AddCourtPageState extends State<AddCourtPage> {
 
   Future<void> _saveCourt() async {
     final name = _nameCtrl.text.trim();
+
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng nhập tên sân')),
+      );
+      return;
+    }
+
+    if (_selectedType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng chọn loại môn thể thao')),
+      );
+      return;
+    }
+
+    if (_selectedSize == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng chọn loại sân theo số người')),
       );
       return;
     }
@@ -62,6 +94,8 @@ class _AddCourtPageState extends State<AddCourtPage> {
         'city': _cityCtrl.text.trim(),
         'price': _priceCtrl.text.trim(),
         'active': _active,
+        'type': _selectedType, // 🔹 loại môn thể thao
+        'size': _selectedSize, // 🔹 loại sân theo số người
         'imagePaths': _images.map((x) => x.path).toList(),
       };
 
@@ -187,6 +221,48 @@ class _AddCourtPageState extends State<AddCourtPage> {
                         ),
                       ],
                     ),
+            ),
+            const SizedBox(height: 12),
+
+            // --- Dropdown chọn loại môn thể thao ---
+            DropdownButtonFormField<String>(
+              value: _selectedType,
+              items: _courtTypes
+                  .map(
+                    (type) => DropdownMenuItem(
+                      value: type,
+                      child: Text(type),
+                    ),
+                  )
+                  .toList(),
+              decoration: const InputDecoration(
+                labelText: 'Loại môn thể thao',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) {
+                setState(() => _selectedType = value);
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // --- Dropdown chọn loại sân theo số người ---
+            DropdownButtonFormField<String>(
+              value: _selectedSize,
+              items: _courtSizes
+                  .map(
+                    (size) => DropdownMenuItem(
+                      value: size,
+                      child: Text(size),
+                    ),
+                  )
+                  .toList(),
+              decoration: const InputDecoration(
+                labelText: 'Loại sân (số người)',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) {
+                setState(() => _selectedSize = value);
+              },
             ),
             const SizedBox(height: 12),
 

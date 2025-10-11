@@ -65,6 +65,21 @@ class OwnerCourtDetailPage extends StatelessWidget {
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 8),
+
+            // 🏟️ Loại sân
+            Text(
+              '⚽ Loại sân: ${court['courtType'] ?? "Chưa có"}',
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+
+            // 👥 Loại sân theo người
+            Text(
+              '👥 Loại sân theo người: ${court['playerType'] ?? "Chưa có"}',
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+
             Text(
               'Phường/Xã: ${court['ward'] ?? "Chưa có"}',
               style: const TextStyle(fontSize: 16),

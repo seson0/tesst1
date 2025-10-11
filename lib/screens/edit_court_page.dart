@@ -23,6 +23,23 @@ class _EditCourtPageState extends State<EditCourtPage> {
   bool _active = true;
   bool _saving = false;
 
+  // --- Thêm biến cho dropdown ---
+  String? _selectedType;
+  String? _selectedSizeType;
+
+  final List<String> _courtTypes = [
+    'Bóng đá',
+    'Bóng rổ',
+    'Bóng bàn',
+    'Quần vợt',
+  ];
+
+  final List<String> _sizeTypes = [
+    'Sân 5 người',
+    'Sân 7 người',
+    'Sân 11 người',
+  ];
+
   final ImagePicker _picker = ImagePicker();
   List<String> _imagePaths = [];
 
@@ -38,7 +55,11 @@ class _EditCourtPageState extends State<EditCourtPage> {
     _priceCtrl = TextEditingController(text: c['price']?.toString() ?? '');
     _active = (c['active'] ?? true) as bool;
 
-    // Lấy danh sách ảnh (ưu tiên mảng imagePaths, fallback sang imagePath cũ)
+    // 🔹 Lấy giá trị loại sân và loại sân theo số người (nếu có)
+    _selectedType = c['type']?.toString();
+    _selectedSizeType = c['sizeType']?.toString();
+
+    // Lấy danh sách ảnh
     if (c['imagePaths'] != null && c['imagePaths'] is List) {
       _imagePaths = List<String>.from(c['imagePaths']);
     } else if (c['imagePath'] != null) {
@@ -79,6 +100,20 @@ class _EditCourtPageState extends State<EditCourtPage> {
       return;
     }
 
+    if (_selectedType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng chọn loại sân')),
+      );
+      return;
+    }
+
+    if (_selectedSizeType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng chọn loại sân theo số người')),
+      );
+      return;
+    }
+
     setState(() => _saving = true);
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -94,6 +129,8 @@ class _EditCourtPageState extends State<EditCourtPage> {
         'city': _cityCtrl.text.trim(),
         'price': _priceCtrl.text.trim(),
         'active': _active,
+        'type': _selectedType, // 🔹 loại sân
+        'sizeType': _selectedSizeType, // 🔹 loại sân theo số người
         'imagePaths': _imagePaths,
       };
 
@@ -154,7 +191,7 @@ class _EditCourtPageState extends State<EditCourtPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Hiển thị nhiều ảnh
+            // --- Hiển thị nhiều ảnh ---
             SizedBox(
               height: 140,
               child: ListView.separated(
@@ -212,6 +249,46 @@ class _EditCourtPageState extends State<EditCourtPage> {
               ),
             ),
             const SizedBox(height: 12),
+
+            // --- Dropdown chọn loại sân ---
+            DropdownButtonFormField<String>(
+              value: _selectedType,
+              items: _courtTypes
+                  .map(
+                    (type) => DropdownMenuItem(
+                      value: type,
+                      child: Text(type),
+                    ),
+                  )
+                  .toList(),
+              decoration: const InputDecoration(
+                labelText: 'Loại sân',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) => setState(() => _selectedType = value),
+            ),
+            const SizedBox(height: 12),
+
+            // --- Dropdown chọn loại sân theo số người ---
+            DropdownButtonFormField<String>(
+              value: _selectedSizeType,
+              items: _sizeTypes
+                  .map(
+                    (type) => DropdownMenuItem(
+                      value: type,
+                      child: Text(type),
+                    ),
+                  )
+                  .toList(),
+              decoration: const InputDecoration(
+                labelText: 'Loại sân theo số người',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) => setState(() => _selectedSizeType = value),
+            ),
+            const SizedBox(height: 12),
+
+            // --- Các trường nhập liệu khác ---
             TextField(
               controller: _nameCtrl,
               decoration: const InputDecoration(labelText: 'Tên sân'),
@@ -233,14 +310,16 @@ class _EditCourtPageState extends State<EditCourtPage> {
                 Expanded(
                   child: TextField(
                     controller: _wardCtrl,
-                    decoration: const InputDecoration(labelText: 'Phường/Xã'),
+                    decoration:
+                        const InputDecoration(labelText: 'Phường/Xã'),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: TextField(
                     controller: _cityCtrl,
-                    decoration: const InputDecoration(labelText: 'Tỉnh/Thành phố'),
+                    decoration: const InputDecoration(
+                        labelText: 'Tỉnh/Thành phố'),
                   ),
                 ),
               ],
@@ -249,7 +328,8 @@ class _EditCourtPageState extends State<EditCourtPage> {
             TextField(
               controller: _priceCtrl,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Giá (vnđ/giờ)'),
+              decoration:
+                  const InputDecoration(labelText: 'Giá (vnđ/giờ)'),
             ),
             const SizedBox(height: 12),
             SwitchListTile(
